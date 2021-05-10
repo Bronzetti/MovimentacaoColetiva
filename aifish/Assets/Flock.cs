@@ -5,48 +5,56 @@ using UnityEngine;
 public class Flock : MonoBehaviour
 { 
 
-public FlockManager myManager; //Pega o script FlockManager
+public FlockManager myManager; //Pega o script FlockManager que é meu gerenciador
  //Velocidade do cardume
 public float speed;
 bool turning = false;
 
 void Start()
 {
-        //Speed Random
+        //Controle de velocidades
     speed = Random.Range(myManager.minSpeed,
         myManager.maxSpeed);
 }
 
 void Update()
 {
-    Bounds b = new Bounds(myManager.transform.position, myManager.swinLimits * 2); 
-    if (!b.Contains(transform.position))
+    Bounds b = new Bounds(myManager.transform.position, myManager.swinLimits * 2); //Limitação de espaço, sendo Bound, um limitador
+
+        RaycastHit hit = new RaycastHit(); //Raycast para pegar o local que deve ser evitada a colisão pelos peixes
+        Vector3 direction = myManager.transform.position - transform.position; //
+
+    if (!b.Contains(transform.position)) //O peixe pode chegar até um determinado ponto mas ele precisa voltar para o cardume 
     {
-        turning = true;
+        turning = true; //Construção do uso do Reflect usando Raycast
+            direction = myManager.transform.position - transform.position;
     }
+    else if(Physics.Raycast(transform.position, this.transform.forward * 50, out hit)) //Hit atribuído ao pilar fazendo com que o peixe evite de atravessar o objeto
+        {
+            turning = true; 
+            direction = Vector3.Reflect(this.transform.forward, hit.normal); //Direção com Reflect
+        }    
     else
     {
         turning = false;
     }
-
     if (turning)
     {
-        Vector3 direction = myManager.transform.position - transform.position;
         transform.rotation = Quaternion.Slerp(transform.rotation,
-            Quaternion.LookRotation(direction),
-            myManager.rotationSpeed * Time.deltaTime);
+                             Quaternion.LookRotation(direction),
+                             myManager.rotationSpeed * Time.deltaTime);
     }
-    else
+    else //Caso seja falso
     {
-        if (Random.Range(0, 100) < 10)
+        if (Random.Range(0, 100) < 10) //Se o peixe estiver num cardume menor o peixe tem sua velocidade por aproximação
             speed = Random.Range(myManager.minSpeed, myManager.maxSpeed);
-        if (Random.Range(0, 100) < 20)
+        if (Random.Range(0, 100) < 20) //Caso esteja acima dos 20, é aplicado o ApplyRules
             ApplyRules();
     }
-    transform.Translate(0, 0, Time.deltaTime * speed);
+    transform.Translate(0, 0, Time.deltaTime * speed); //Aplicação da velocidade
 
 }
-void ApplyRules() //Aplica regras de movimentação 
+void ApplyRules() //Aplica regras de movimentação/aplicação
 {   //Array
     GameObject[] gos; 
     gos = myManager.allFish;
@@ -57,7 +65,7 @@ void ApplyRules() //Aplica regras de movimentação
     float nDistance; //Distâcia atribuida aos peixes vizinhos
     int groupSize = 0; //Grupo tamanho
     
-    foreach (GameObject go in gos) //Loop
+    foreach (GameObject go in gos) //Loop multiplicando os peixes 
         {
         if (go != this.gameObject) //Condicional caso o objeto não seja esse
             {
@@ -86,7 +94,8 @@ void ApplyRules() //Aplica regras de movimentação
         Vector3 direction = (vcenter + vavoid) - transform.position; //Calcula direção do centro para partir já para a outra rota
         if (direction != Vector3.zero) //Direção diferente de zero
             transform.rotation = Quaternion.Slerp(transform.rotation,
-                Quaternion.LookRotation(direction), myManager.rotationSpeed * Time.deltaTime);
+                Quaternion.LookRotation(direction),
+                myManager.rotationSpeed * Time.deltaTime);
 
         }
 }
